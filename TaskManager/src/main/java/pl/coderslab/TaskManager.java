@@ -1,7 +1,8 @@
 package pl.coderslab;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import pl.coderslab.ConsoleColors;
-
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,7 +29,11 @@ public class TaskManager {
                     System.out.print(ConsoleColors.BLUE + "What's next? " + ConsoleColors.RESET);
                     break;
                 case "remove":
-                    removeTask();
+                    try {
+                        removeTask();
+                    } catch (IndexOutOfBoundsException ex) {
+                        System.out.println(ConsoleColors.RED + "Task doesn't exist! Try again! (" + ex.getMessage() + ")" + ConsoleColors.RESET);
+                    }
                     System.out.print(ConsoleColors.BLUE + "What's next? " + ConsoleColors.RESET);
                     break;
                 case "list":
@@ -36,11 +41,12 @@ public class TaskManager {
                     System.out.print(ConsoleColors.BLUE + "What's next? " + ConsoleColors.RESET);
                     break;
                 case "exit":
-                    save2File();
-                    System.out.println(ConsoleColors.RED + "Goodbye!");
+                    save2File(FILE_NAME, tasks);
+                    System.out.println(ConsoleColors.PURPLE + "Everything saved!");
+                    System.out.println("Goodbye!");
                     System.exit(0);
                 default:
-                    System.out.println("Wrong option! Try again: ");
+                    System.out.println(ConsoleColors.RED + "Wrong option! Try again: " + ConsoleColors.RESET);
             }
         }
     }
@@ -49,7 +55,7 @@ public class TaskManager {
         Path path = Paths.get(fileName);
         //check if file exists
         if (!Files.exists(path)){
-            System.out.println("File doesn't exist!");
+            System.out.println(ConsoleColors.RED + "File doesn't exist!" + ConsoleColors.RESET);
             System.exit(0);
         }
         //load file to tab
@@ -71,21 +77,47 @@ public class TaskManager {
     }
 
     public static void startingProcedure(){
-        System.out.println(ConsoleColors.BLUE);
+        System.out.println(ConsoleColors.BLUE_BOLD);
         System.out.println("Hello! There are few options to choose." + ConsoleColors.RESET);
         for (String option : OPTIONS) {
             System.out.println("- " + option);
         }
-        System.out.println(ConsoleColors.BLUE);
+        System.out.println(ConsoleColors.BLUE_BOLD);
         System.out.print("Choose your option: " + ConsoleColors.RESET);
     }
 
     public static void addTask(){
-        System.out.println("added");
+        Scanner scan = new Scanner(System.in);
+        System.out.println(ConsoleColors.PURPLE + "Please add task description: ");
+        String description = scan.nextLine();
+        System.out.println("Please add task due date: ");
+        String date = scan.nextLine();
+        System.out.println("Is your task important: true/false: " + ConsoleColors.RESET);
+        String important = scan.nextLine();
+        tasks = Arrays.copyOf(tasks, tasks.length + 1);
+        tasks[tasks.length-1] = new String[3];
+        tasks[tasks.length-1][0] = description;
+        tasks[tasks.length-1][1] = date;
+        tasks[tasks.length-1][2] = important;
     }
 
     public static void removeTask(){
-        System.out.println("removed");
+        Scanner scan = new Scanner(System.in);
+        System.out.print(ConsoleColors.PURPLE + "Please select number to remove: ");
+        String num = scan.nextLine();
+        while (!isNumberGreaterEqualZero(num)){
+            System.out.print(ConsoleColors.RED + "Incorrect argument passed! Please select number: ");
+            num = scan.nextLine();
+        }
+        int number = Integer.parseInt(num);
+        tasks = ArrayUtils.remove(tasks, number);
+    }
+
+    public static boolean isNumberGreaterEqualZero(String input) {
+        if (NumberUtils.isParsable(input)) {
+            return Integer.parseInt(input) >= 0;
+        }
+        return false;
     }
 
     public static void showList(String[][] tab){
@@ -98,7 +130,17 @@ public class TaskManager {
         }
     }
 
-    public static void save2File(){
-        System.out.println("saved");
+    public static void save2File(String fileName, String[][] tab){
+        Path path = Paths.get(fileName);
+        String[] lines = new String[tab.length];
+        for (int i = 0; i < tab.length; i++) {
+            lines[i] = String.join(",", tab[i]);
+        }
+
+        try {
+            Files.write(path, Arrays.asList(lines));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 }
